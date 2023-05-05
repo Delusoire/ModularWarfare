@@ -1,14 +1,21 @@
 package com.modularwarfare.common.network;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.driveables.DriveablePart;
+import com.flansmod.common.driveables.EntityDriveable;
+import com.flansmod.common.driveables.EnumDriveablePart;
+import com.flansmod.common.guns.raytracing.FlansModRaytracer;
+import com.flansmod.common.network.PacketDriveableDamage;
+import com.flansmod.common.types.TypeFile;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
+import com.modularwarfare.common.entity.FlansDriveableHitWrapperEntity;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.guns.manager.ShotValidation;
-import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -129,7 +136,7 @@ public class PacketExpGunFire extends PacketBase {
 
                             if (ModularWarfare.gunTypes.get(internalname) != null) {
                                 ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
-                                
+
                                 if(entityPlayer.getHeldItemMainhand().getItem()!=itemGun) {
                                     return;
                                 }
@@ -166,11 +173,11 @@ public class PacketExpGunFire extends PacketBase {
                                                     }
                                                 }
                                             }
-                                            
+
                                             //BULLET START
-                                            
+
                                             ItemBullet bulletItem = ItemGun.getUsedBullet(entityPlayer.getHeldItemMainhand(), itemGun.type);
-                                            
+
                                             if (target instanceof EntityLivingBase) {
                                                 EntityLivingBase targetELB = (EntityLivingBase) target;
                                                 if (bulletItem != null) {
@@ -188,14 +195,14 @@ public class PacketExpGunFire extends PacketBase {
                                                     }
                                                 }
                                             }
-                                            
+
                                             damage*= bulletItem.type.bulletDamageFactor;
 
                                             //BULLET END
                                             boolean flag=false;
                                             DamageSource damageSource=DamageSource.causePlayerDamage(entityPlayer).setProjectile();
-                                           
-                                            
+
+
                                             if(bulletItem.type.isFireDamage) {
                                                 damageSource.setFireDamage();
                                             }
@@ -211,10 +218,23 @@ public class PacketExpGunFire extends PacketBase {
                                             if(bulletItem.type.isMagicDamage) {
                                                 damageSource.setMagicDamage();
                                             }
-                                            if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                                                flag=RayUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                                            if (target instanceof EntityDriveable) {
+                                                EntityDriveable driveable = (EntityDriveable) target;
+                                                DriveablePart part = driveable.getDriveableData().parts.get(EnumDriveablePart.getPart(hitboxType));
+                                                part.health -= damage * 0.7;
+                                                if (bulletItem.type.isFireDamage) {
+                                                    part.fireTime = 20;
+                                                    part.onFire = true;
+                                                }
+                                                driveable.checkParts();
+                                                FlansMod.getPacketHandler().sendToAllAround(new PacketDriveableDamage(driveable), driveable.posX, driveable.posY, driveable.posZ, 100, driveable.dimension);
+                                                flag = true;
                                             } else {
-                                                flag=target.attackEntityFrom(damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                                                if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
+                                                    flag = RayUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                                                } else {
+                                                    flag = target.attackEntityFrom(damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                                                }
                                             }
                                             target.hurtResistantTime = 0;
                                             if(flag) {
@@ -228,7 +248,7 @@ public class PacketExpGunFire extends PacketBase {
                                                     }
                                                 }
                                             }
-                                            
+
                                             if (entityPlayer instanceof EntityPlayerMP) {
                                                 ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(hitboxType.contains("head")), entityPlayer);
                                                 ModularWarfare.NETWORK.sendTo(new PacketPlaySound(target.getPosition(), "flyby", 1f, 1f), (EntityPlayerMP) target);

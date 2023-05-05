@@ -12,6 +12,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
+import com.modularwarfare.common.entity.FlansDriveableHitWrapperEntity;
 import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.guns.*;
@@ -21,8 +22,6 @@ import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
-import com.modularwarfare.utility.MWSound;
-import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -389,8 +388,14 @@ public class ShotManager {
                     if (rayTrace.rayTraceResult != null) {
                         if (rayTrace.rayTraceResult.hitVec != null) {
                             if(rayTrace.rayTraceResult.entityHit != null){
+                                String hitboxType = "";
+                                if (rayTrace.rayTraceResult.entityHit instanceof FlansDriveableHitWrapperEntity) {
+                                    FlansDriveableHitWrapperEntity driveableHitW = (FlansDriveableHitWrapperEntity) rayTrace.rayTraceResult.entityHit;
+                                    hitboxType = driveableHitW.part.getShortName();
+                                    rayTrace.rayTraceResult.entityHit = driveableHitW.driveable;
+                                }
                                 //Normal entity hit
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
+                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, hitboxType, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
                             } else {
                                 //Crack hit block packet
                                 ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));                            }

@@ -38,7 +38,7 @@ import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
-import com.modularwarfare.raycast.DefaultRayCasting;
+import com.modularwarfare.raycast.FlansRayCasting;
 import com.modularwarfare.raycast.RayCasting;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
@@ -142,7 +142,7 @@ public class ModularWarfare {
      */
     public static File addonDir;
     public static AddonLoaderManager loaderManager;
-    
+
     public static boolean isLoadedModularMovements=false;
 
 
@@ -355,7 +355,7 @@ public class ModularWarfare {
             contentPacks = PROXY.getContentList();
         }
 
-        registerRayCasting(new DefaultRayCasting());
+        registerRayCasting(new FlansRayCasting());
         this.loaderManager.preInitAddons(event);
 
         // Loads Content Packs
@@ -371,7 +371,7 @@ public class ModularWarfare {
         MinecraftForge.EVENT_BUS.register(this);
 
     }
-    
+
     public static void loadConfig() {
         new ModConfig(new File(MOD_DIR, "mod_config.json"));
     }
@@ -388,7 +388,7 @@ public class ModularWarfare {
         if(Loader.isModLoaded("modularmovements")) {
             isLoadedModularMovements=true;
         }
-        
+
         PROXY.load();
 
         NETWORK = new NetworkHandler();
@@ -554,13 +554,13 @@ public class ModularWarfare {
                         PROXY.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
                 }
-                
+
                 if(item instanceof ItemBullet){
                     for(SkinType skin: ((ItemBullet) item).type.modelSkins) {
                         PROXY.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
                     }
                 }
-                
+
                 if(item instanceof ItemMWArmor) {
                     for(SkinType skin: ((ItemMWArmor) item).type.modelSkins) {
                         PROXY.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
@@ -593,4 +593,3 @@ public class ModularWarfare {
 
 
 }
-
